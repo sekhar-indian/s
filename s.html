@@ -1,31 +1,24 @@
 <!DOCTYPE html>
-<html >
+<html>
 <head>
- 
-  <title>To-Do List </title>
-  
-   
-   
+  <title>To-Do List</title>
 </head>
+<body>
+  <form id="form">
+    <div id="todo-container">
+      <h2>To-Do List</h2>
+      <input type="text" id="taskInput">
+      <textarea id="descriptionInput"></textarea>
+      <button type="submit">Submit</button>
+      <ul id="taskList"></ul> 
+    </div>
+    <div>
+      <h3>To-Dos Done</h3>
+      <ul id="doneList"></ul>
+    </div>
+  </form>
 
-<form id="form">
-  <div id="todo-container">
-    <h2>To-Do List</h2>
-    <input type="text" id="taskInput" >
-    <textarea id="descriptionInput" ></textarea>
-    <button type="submit" >Submit</button>
-    <ul id="taskList"></ul>
-  </div>
-  <div>
-    <h3>To-DOS SDone</h3>
-    <data id="1"></data>
-  
-</div>
-
-
-</form>
-
-<script src="s.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+  <script src="s.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</body>
 </html>
