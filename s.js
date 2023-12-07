@@ -1,87 +1,125 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("form");
-  form.addEventListener("submit", handleSubmit);
 
-  function handleSubmit(event) {
-    event.preventDefault();
+const API_URL="https://crudcrud.com/api/36ef6ac87b31411abb97a34568e422bc/n"
+const completedTasksKey = 'completedTasks';
 
-    const taskInput = document.getElementById("taskInput").value;
-    const descriptionInput = document.getElementById("descriptionInput").value;
+const form = document.getElementById('form');
+const taskInput = document.getElementById('taskInput');
+const descriptionInput = document.getElementById('descriptionInput');
+const taskList = document.getElementById('taskList');
+const doneList = document.getElementById('doneList');
 
-    // Creating the list item for local tasks
-    const taskList = document.getElementById("taskList");
-    const listItem = createTaskElement(taskInput, descriptionInput);
-    taskList.appendChild(listItem);
 
-    // Clearing input fields after adding the task
-    document.getElementById("taskInput").value = "";
-    document.getElementById("descriptionInput").value = "";
+function createTaskItem(task, description, id) {
+    const li = document.createElement('li');
+   li.textContent = `${task}: ${description}`;
+   li.dataset.id = id;
 
-    // Sending data to the API using Axios
-    sendDataToAPI(taskInput, descriptionInput);
+  const completeButton = document.createElement('button');
+  completeButton.textContent = 'Complete';
+  completeButton.addEventListener('click', async function(event) {
+  event.stopPropagation();
+ 
+
+    li.remove();
+    const taskId = li.dataset.id;
+
+    try {
+      await axios.put(`${API_URL}/${taskId}`, { completed: true });
+      const doneTask = document.createElement('li');
+      doneTask.textContent = `${task}: ${description}`;
+      doneList.appendChild(doneTask);
+    
+     
+      const completedTasks = JSON.parse(localStorage.getItem(completedTasksKey)) || [];
+      completedTasks.push({ id: taskId, task, description });
+      localStorage.setItem(completedTasksKey, JSON.stringify(completedTasks));
+    } catch (error) {
+      console.error('Error updating task status:', error);
+    }
+  });
+  li.appendChild(completeButton);
+
+  const deleteButton = document.createElement('button');
+     deleteButton.textContent = 'Delete';
+  deleteButton.addEventListener('click', async function(event) {
+    event.stopPropagation();
+    
+     li.remove();
+
+    const taskId = li.dataset.id;
+
+    try {
+      await axios.delete(`${API_URL}/${taskId}`);
+      
+      const completedTasks = JSON.parse(localStorage.getItem(completedTasksKey)) || [];
+        const updatedCompletedTasks = completedTasks.filter(task => task.id !== taskId);
+            localStorage.setItem(completedTasksKey, JSON.stringify(updatedCompletedTasks));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  });
+  li.appendChild(deleteButton);
+
+  return li;
+}
+
+// submission
+form.addEventListener('submit', async function(event) {
+  event.preventDefault();
+
+  const task = taskInput.value;
+  const description = descriptionInput.value;
+
+  if (task.trim() !== '') {
+    const newTaskItem = createTaskItem(task, description);
+    taskList.appendChild(newTaskItem);
+
+    try {
+      const response = await axios.post(API_URL, { taskName: task, description, completed: false });
+      const { _id } = response.data;
+       newTaskItem.dataset.id = _id; // Update dataset id after adding task
+    } catch (error) {
+      console.error('Error adding new task:', error);
+    }
+
+    taskInput.value = '';
+    descriptionInput.value = '';
   }
-
-  function createTaskElement(taskInput, descriptionInput) {
-    const listItem = document.createElement("li");
-    listItem.innerHTML = `
-      <div>
-        <span>${taskInput}</span>
-        <span>${descriptionInput}</span>
-        <button class="completeBtn">Complete</button>
-        <button class="deleteBtn">Delete</button>
-      </div>
-    `;
-
-    const deleteButton = listItem.querySelector(".deleteBtn");
-    deleteButton.addEventListener("click", handleDelete);
-
-    const completeButton = listItem.querySelector(".completeBtn");
-    completeButton.addEventListener("click", handleComplete);
-
-    return listItem;
-  }
-
-  function handleDelete(event) {
-    const listItem = event.target.parentElement.parentElement;
-    listItem.remove();
-  }
-
-  function handleComplete(event) {
-    const listItem = event.target.parentElement.parentElement;
-    const doneList = document.getElementById("doneList");
-    doneList.appendChild(listItem);
-    event.target.remove();
-  }
-
-  function sendDataToAPI(taskInput, descriptionInput) {
-    axios
-      .post('https://crudcrud.com/api/0acb7a1adf6a4fdaa05edb56bf14708c/s', {
-        input: taskInput,
-        des: descriptionInput
-      })
-      .then(response => console.log('Data sent to API:', response.data))
-      .catch(error => console.error('Error sending data to API:', error));
-  }
-
-  // Function to fetch data from the API and display it in the doneList area
-  function fetchDataFromAPI() {
-    axios
-      .get('https://crudcrud.com/api/0acb7a1adf6a4fdaa05edb56bf14708c/s')
-      .then(response => showData(response.data))
-      .catch(error => console.error('Error fetching data from API:', error));
-  }
-
-  function showData(data) {
-    const displayArea = document.getElementById("doneList");
-    displayArea.innerHTML = "";
-
-    data.forEach(item => {
-      const displayItem = document.createElement("div");
-      displayItem.textContent = `Task: ${item.input}, Description: ${item.des}`;
-      displayArea.appendChild(displayItem);
-    });
-  }
-
-  // Fetch data from API on page load
-  fetchDataFromAPI();
 });
+
+// Fe
+async function fetchTasks( ) {
+  try {
+    const response = await axios.get(API_URL);
+      const tasks = response.data;
+
+    tasks.forEach(task => {
+      const { _id, taskName, description, completed } = task;
+
+      if (taskName && description) {
+        const taskItem = createTaskItem(taskName, description, _id);
+        if (completed) {
+          const doneTask = document.createElement('li');
+          doneTask.textContent = `${taskName}: ${description}`;
+          doneList.appendChild(doneTask);
+        } else {
+          taskList.appendChild(taskItem);
+        }
+       
+      }
+    });
+
+              
+    const completedTasks = JSON.parse(localStorage.getItem(completedTasksKey)) || [];
+        completedTasks.forEach(completedTask => {
+      const doneTask = document.createElement('li');
+      doneTask.textContent = `${completedTask.task}: ${completedTask.description}`;
+      doneList.appendChild(doneTask);
+    });
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+  }
+}
+
+fetchTasks();
+
